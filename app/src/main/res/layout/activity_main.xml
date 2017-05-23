@@ -39,4 +39,27 @@
             android:onClick="Limpiar"
             android:id="@+id/btnLimpiar" />
     </LinearLayout>
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_weight="0.29">
+
+        <EditText
+            android:layout_width="wrap_content"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:hint="Ingrese identificador"
+            android:id="@+id/tvById" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_weight="2"
+            android:layout_height="wrap_content"
+            android:text="Buscar Por ID"
+            android:onClick="ConsultarPorId"
+            android:id="@+id/btnById" />
+    </LinearLayout>
 </LinearLayout>

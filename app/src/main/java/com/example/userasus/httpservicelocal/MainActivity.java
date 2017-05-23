@@ -9,6 +9,7 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -28,9 +29,11 @@ import java.net.URL;
 public class MainActivity extends AppCompatActivity {
 
     TextView campo;
+    EditText byId;
     String IP="http://192.168.43.87/WebServicesAlumnos/";
-    String IP_CONSULTAR_TODOS=IP+"obtener_alumnos.php";
-    String IP_BORRAR         =IP+"borrar_alumno.php";
+    String IP_CONSULTAR_TODOS  =IP+"obtener_alumnos.php";
+    String IP_BORRAR           =IP+"borrar_alumno.php";
+    String IP_CONSULTAR_POR_ID =IP+"obtener_alumno_por_id.php";
     LlamarServicio obj=null;
 
     @Override
@@ -38,6 +41,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         campo = (TextView) findViewById(R.id.tv1);
+        byId = (EditText) findViewById(R.id.tvById);
     }
 
     public  void Limpiar(View  w){
@@ -86,22 +90,35 @@ public class MainActivity extends AppCompatActivity {
     }
     public void ConsultarServicio(){
         obj = new LlamarServicio();
-        obj.execute();
+        obj.execute(1);
+    }
+    public void ConsultarPorId(View v){
+        obj = new LlamarServicio();
+        String byIdAux = byId.getText().toString();
+        obj.execute(2);
     }
     @Override
     protected void onDestroy() {
         super.onDestroy();
     }
 
-    public class LlamarServicio extends AsyncTask<Void,Void,String>{
+    public class LlamarServicio extends AsyncTask<Integer,Void,String>{
 
         @Override
-        protected String doInBackground(Void... voids) {
+        protected String doInBackground(Integer... voids) {
             StringBuilder result = new StringBuilder();
             String resultAux="";
+            String ip="";
+            if (voids[0]==1){
+             ip=IP_CONSULTAR_TODOS;
+            }else if (voids[0]==2){
+                ip=IP_CONSULTAR_POR_ID;
+            }
             try {
-                URL url = new URL(IP);
+                URL url = new URL(ip);
                 HttpURLConnection conexion = (HttpURLConnection) url.openConnection();
+
+                //añadir parametro.
                 int resultado = conexion.getResponseCode();
 
                 if(resultado== HttpURLConnection.HTTP_OK){//HAY CONEXIÓN
@@ -117,20 +134,25 @@ public class MainActivity extends AppCompatActivity {
                     JSONObject respuestaJSON = new JSONObject(result.toString());   //Creo un JSONObject a partir del StringBuilder pasado a cadena
                     //Accedemos al vector de resultados
                     String resultJSON = respuestaJSON.getString("estado");   // estado es el nombre del campo en el JSON
-                    if (resultJSON=="1"){      // hay alumnos a mostrar
-                        JSONArray alumnosJSON = respuestaJSON.getJSONArray("alumnos");   // estado es el nombre del campo en el JSON
-                        for(int i=0;i<alumnosJSON.length();i++){
-                            resultAux = resultAux + alumnosJSON.getJSONObject(i).getString("idAlumno") + " " +
-                                    alumnosJSON.getJSONObject(i).getString("nombre") + " " +
-                                    alumnosJSON.getJSONObject(i).getString("direccion") + "\n";
-                            //publishProgress(resultAux);
+
+                    if(voids[0]==1) {///CONSULTAR TODOS
+                        if (resultJSON == "1") {      // hay alumnos a mostrar
+                            JSONArray alumnosJSON = respuestaJSON.getJSONArray("alumnos");   // estado es el nombre del campo en el JSON
+                            for (int i = 0; i < alumnosJSON.length(); i++) {
+                                resultAux = resultAux + alumnosJSON.getJSONObject(i).getString("idAlumno") + " " +
+                                        alumnosJSON.getJSONObject(i).getString("nombre") + " " +
+                                        alumnosJSON.getJSONObject(i).getString("direccion") + "\n";
+                                //publishProgress(resultAux);
+                            }
+                        } else if (resultJSON == "2") {
+                            resultAux = "No hay alumnos";
+                        }
+                    }else if(voids[0]==2) {// Consultar por ID
+                        if(resultJSON=="3"){
+                            resultAux="Se necesita un identificador";
                         }
                     }
-                    else if (resultJSON=="2"){
-                        resultAux = "No hay alumnos";
-                    }
                 }
-
             } catch (MalformedURLException e) {
                 e.printStackTrace();
             } catch (IOException e) {
