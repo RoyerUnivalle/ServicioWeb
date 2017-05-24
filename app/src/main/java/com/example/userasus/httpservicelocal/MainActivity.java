@@ -8,6 +8,7 @@ import android.os.AsyncTask;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Base64;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -19,9 +20,11 @@ import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -30,11 +33,12 @@ public class MainActivity extends AppCompatActivity {
 
     TextView campo;
     EditText byId;
-    String IP="http://192.168.43.87/WebServicesAlumnos/";
+    String IP="http://192.168.43.209/WebServicesAlumnos/";
     String IP_CONSULTAR_TODOS  =IP+"obtener_alumnos.php";
     String IP_BORRAR           =IP+"borrar_alumno.php";
     String IP_CONSULTAR_POR_ID =IP+"obtener_alumno_por_id.php";
     LlamarServicio obj=null;
+    String  parametro="";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -93,8 +97,10 @@ public class MainActivity extends AppCompatActivity {
         obj.execute(1);
     }
     public void ConsultarPorId(View v){
+        Toast.makeText(this,"hola",Toast.LENGTH_LONG).show();
         obj = new LlamarServicio();
         String byIdAux = byId.getText().toString();
+        this.parametro=byIdAux;
         obj.execute(2);
     }
     @Override
@@ -102,7 +108,7 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
     }
 
-    public class LlamarServicio extends AsyncTask<Integer,Void,String>{
+    public class LlamarServicio extends AsyncTask<Integer,String,String>{
 
         @Override
         protected String doInBackground(Integer... voids) {
@@ -112,13 +118,14 @@ public class MainActivity extends AppCompatActivity {
             if (voids[0]==1){
              ip=IP_CONSULTAR_TODOS;
             }else if (voids[0]==2){
-                ip=IP_CONSULTAR_POR_ID;
+                ip=IP_CONSULTAR_POR_ID+"?idalumno="+parametro;
             }
             try {
                 URL url = new URL(ip);
                 HttpURLConnection conexion = (HttpURLConnection) url.openConnection();
-
-                //añadir parametro.
+                //int resultado=0;
+                //https://www.studytutorial.in/android-httpurlconnection-post-and-get-request-tutorial
+                //http://www.xyzws.com/javafaq/how-to-use-httpurlconnection-post-data-to-web-server/139
                 int resultado = conexion.getResponseCode();
 
                 if(resultado== HttpURLConnection.HTTP_OK){//HAY CONEXIÓN
@@ -130,9 +137,11 @@ public class MainActivity extends AppCompatActivity {
                     while ((linea = lector.readLine()) !=null){
                        result.append(linea);
                     }
+                    publishProgress(result.toString()+"naaddd"+ip);
                     //Creamos un objeto JSONObject para poder acceder a los atributos (campos) del objeto.
                     JSONObject respuestaJSON = new JSONObject(result.toString());   //Creo un JSONObject a partir del StringBuilder pasado a cadena
                     //Accedemos al vector de resultados
+
                     String resultJSON = respuestaJSON.getString("estado");   // estado es el nombre del campo en el JSON
 
                     if(voids[0]==1) {///CONSULTAR TODOS
@@ -150,6 +159,12 @@ public class MainActivity extends AppCompatActivity {
                     }else if(voids[0]==2) {// Consultar por ID
                         if(resultJSON=="3"){
                             resultAux="Se necesita un identificador";
+                        }else if(resultJSON=="2"){
+                            resultAux="Ningun estudiante encontrado";
+                        }else if (resultJSON=="1"){
+                            resultAux="Encontrado";
+                        }else{
+                            resultAux="algo anda mal"+ip;
                         }
                     }
                 }
@@ -163,13 +178,22 @@ public class MainActivity extends AppCompatActivity {
             return resultAux;
         }
         @Override
-        protected void onProgressUpdate(Void... values) {
+        protected void onProgressUpdate(String... values) {
             super.onProgressUpdate(values);
+            campo.setText(values[0]);
         }
         @Override
         protected void onPostExecute(String s) {
             super.onPostExecute(s);
-            campo.setText(s);
+           // campo.setText(s);
+        }
+    }
+
+    public class Get extends AsyncTask<Void,Void,Void>{
+        @Override
+        protected Void doInBackground(Void... voids) {
+
+            return null;
         }
     }
 }
